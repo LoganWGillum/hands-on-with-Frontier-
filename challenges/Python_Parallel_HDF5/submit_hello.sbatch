@@ -6,13 +6,14 @@
 #SBATCH -p batch
 #SBATCH -N 1
 
+unset SLURM_EXPORT_ENV
+
 date
 
 module load PrgEnv-gnu
 module load hdf5
 
-source deactivate_envs.sh
+source ~/miniconda-frontier-handson/bin/activate base
+source activate ~/.conda/envs/h5pympi-frontier
 
-source activate /ccs/home/${USER}/.conda/envs/cupy-frontier
-
-srun -n42 python3 hello_mpi.py
+srun -n42 python3 -u hello_mpi.py

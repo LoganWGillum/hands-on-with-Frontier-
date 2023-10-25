@@ -54,34 +54,77 @@ Table of Contents:
 First, we will unload all the current modules that you may have previously loaded on Frontier and then immediately load the default modules.
 Assuming you cloned the repository in your home directory:
 
-```
+```bash
 $ cd ~/hands-on-with-Frontier-/challenges/Python_Pytorch_Basics
-$ source deactivate_envs.sh
-$ module purge
-$ module load DefApps
+$ source ~/hands-on-with-Frontier-/misc_scripts/deactivate_envs.sh
+$ module reset
 ```
 
 The `source deactivate_envs.sh` command is only necessary if you already have the Python module loaded.
 The script unloads all of your previously activated conda environments, and no harm will come from executing the script if that does not apply to you.
 
-Next, we will load the gnu compiler module (most Python packages assume GCC), the python module (allows us to utilize conda environments) and the GPU module (necessary for using PyTorch on the GPU):
+Next, we will load the gnu compiler module (most Python packages assume GCC) and the GPU module (necessary for using PyTorch on the GPU):
 
-```
+```bash
 $ module load PrgEnv-gnu
+$ module load amd-mixed/5.6.0
 $ module load craype-accel-amd-gfx90a
+$ source ~/miniconda-frontier-handson/bin/activate base
 ```
 
-PyTorch is not included on Frontier, so we will install it using Pip3. If you have already setup a miniconda environment in the 'Python_Conda_Basics' module, use this instruction to activate it:
-```
-$ source activate /ccs/proj/<YOUR_PROJECT_ID>/<YOUR_USER_ID>/conda_envs/frontier/py39-frontier
+We loaded the "base" conda environment, but we need to create a new environment using the conda create command:
+
+```bash
+$ conda create -p ~/.conda/envs/torch-frontier python=3.10
 ```
 
-If you do not have this environment setup, you will need to setup miniconda and create a new environment using the instructions found in 'Python_Conda_Basics'. 
+>>  ---
+> NOTE: As noted in [Conda Basics](../Python_Conda_Basics), it is highly recommended to create new environments in the "Project Home" directory.
+> However, due to the limited disk quota and potential number of training participants on Frontier, we will be creating our environment in the "User Home" directory.
+>>  ---
 
-Once you have source activated your conda environment, you can use this instruction to install pytorch:
+After following the prompts for creating your new environment, the installation should be successful, and you will see something similar to:
+
 ```
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.4.2
+Preparing transaction: done
+Verifying transaction: done
+Executing transaction: done
+#
+# To activate this environment, use
+#
+#     $ conda activate ~/.conda/envs/torch-frontier
+#
+# To deactivate an active environment, use
+#
+#     $ conda deactivate
 ```
+
+Due to the specific nature of conda on Frontier, we will be using `source activate` instead of `conda activate` to activate our new environment:
+
+```bash
+$ source activate ~/.conda/envs/torch-frontier
+```
+
+The path to the environment should now be displayed in "( )" at the beginning of your terminal lines, which indicates that you are currently using that specific conda environment.
+If you check with `conda env list`, you should see that the `*` marker is next to your new environment, which means that it is currently active:
+
+```bash
+$ conda env list
+
+# conda environments:
+#
+                      * /ccs/home/<YOUR_USER_ID>/.conda/envs/torch-frontier
+base                    /ccs/home/<YOUR_USER_ID>/miniconda-frontier-handson
+```
+
+Finally, we can install PyTorch using `pip` in our new conda environment:
+
+```bash
+$ pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.6
+$ pip install matplotlib
+```
+
+Note that we also installed matplotlib as it will be needed for plotting functions in the CNN.
 
 &nbsp;
 
@@ -95,6 +138,7 @@ Let's get started by importing PyTorch in a Python prompt:
 
 ```python
 $ python3
+
 Python 3.9.13 (main, Aug 10 2022, 17:20:06) 
 [GCC 9.3.0 20200312 (Cray Inc.)] on linux
 Type "help", "copyright", "credits" or "license" for more information.
@@ -674,12 +718,13 @@ Now for the fun part!
 You'll be submitting a job to run on a compute node to train your network.
 However, before asking for a compute node, change into your scratch directory and copy over the relevant files.
 
-```
+```bash
 $ cd /lustre/orion/[projid]/scratch/[userid]
 $ mkdir pytorch_test
 $ cd pytorch_test
-$ cp ~/hands-on-with-Frontier-/challenges/Python_Pytorch_Basics/*.py .
-$ cp ~/hands-on-with-Frontier-/challenges/Python_Pytorch_Basics/*.sbatch .
+$ cp ~/hands-on-with-Frontier-/challenges/Python_Pytorch_Basics/download_data.py ./download_data.py
+$ cp ~/hands-on-with-Frontier-/challenges/Python_Pytorch_Basics/cnn.py ./cnn.py
+$ cp ~/hands-on-with-Frontier-/challenges/Python_Pytorch_Basics/submit_cnn.sbatch ./submit_cnn.sbatch
 ```
 
 The goal of this challenge is to achieve an overall network accuracy of 60% or greater with a learning rate of 0.001 within an hour of compute time.
@@ -698,7 +743,7 @@ More specifically:
 
 If you have something like [XQuartz](https://www.xquartz.org/index.html) (Mac) or [Xming](http://www.straightrunning.com/XmingNotes/) (Windows) installed on your local computer, and have enabled window forwarding, you can open the images on Frontier by doing:
 
-```
+```bash
 $ module load imagemagick
 $ display last_batch.png
 $ display overall_results.png
@@ -716,7 +761,7 @@ To do this challenge:
 
 1. Run the `download_data.py` script to download the CIFAR-10 dataset. This is necessary because the compute nodes won't be able to download it during your batch job when running `cnn.py`. If successful, you'll see a directory named `data` in your current directory.
 
-    ```
+    ```bash
     $ python3 download_data.py
     ```
     > Note: You only need to run this script once.
@@ -724,9 +769,10 @@ To do this challenge:
 
 2. Use your favorite editor to change `num_epochs` and `batch_size` to tune your network (lines 119 and 120, marked by "CHANGE-ME"). For example:
 
-    ```
+    ```bash
     $ vi cnn.py
     ```
+
     ```python
     # Hyper-parameters 
     num_epochs = 4 #CHANGE-ME
@@ -737,8 +783,8 @@ To do this challenge:
 
 3. Submit a job:
 
-    ```
-    $ sbatch submit_cnn.sbatch
+    ```bash
+    $ sbatch --export=NONE submit_cnn.sbatch
     ```
 
 4. Look at the statistics printed in your `pytorch_cnn-<JOB_ID>.out` file after the job completes to see if you were successful or not (i.e., see "Success!" or "Try again!").
@@ -753,38 +799,20 @@ If you liked PyTorch I also suggest taking a loot at [PyTorch Lightning](https:/
 
 ### 5.1 <a name="leaderboard"></a>Leaderboard
 
-Below is a top 10 leaderboard of peoples' best CNNs that achieved >60% accuracy within an hour of walltime on Frontier!
+Below is a top 10 leaderboard of peoples' best CNNs that achieved >60% accuracy within an hour of walltime on Ascent!
 
 Top Accuracy:
 
 | Rank  | Name             | Program                       | Accuracy | Speed   |
 | :---  | :---             | :---------:                   | :------: | :---:   |
-| 1.    | Johannes K.      | Summer HPC-CC 2022            | 65.71%   | 1389s   |
-| 2.    | Ahmedur S.       | SC HPC-CC 2022                | 65.55%   | 1918s   |
-| 3.    | Gavin S.         | Summer HPC-CC 2022            | 65.43%   | 1262s   |
-| 4.    | Sola O.          | Summer HPC-CC 2022            | 64.87%   | 1704s   |
-| 5.    | Adam S.          | Summer HPC-CC 2022            | 63.87%   | 2642s   |
-| 6.    | Madhu G.         | Summer HPC-CC 2022            | 63.86%   | 1191s   |
-| 7.    | Alessandro B.    | Summer HPC-CC 2022            | 62.71%   | 1659s   |
-| 8.    | Moyi T.          | Summer HPC-CC 2022            | 62.33%   | 2164s   |
-| 9.    | Mercy A.         | SIAM HPC-CC 2022              | 62.21%   | 652s    |
-| 10.   | Justin B.        | Summer HPC-CC 2022            | 61.94%   | 804s    |
+| 1.    | Michael S.       | OLCF                          | 99.99%   | 9999s   |
+
 
 Top Speed:
 
 | Rank  | Name             | Program                       | Accuracy | Speed   |
 | :---  | :---             | :---------:                   | :------: | :---:   |
-| 1.    | Mercy A.         | SIAM HPC-CC 2022              | 62.21%   | 652s    | 
-| 2.    | Justin B.        | Summer HPC-CC 2022            | 61.94%   | 804s    |
-| 3.    | Ahmedur S.       | SC HPC-CC 2022                | 60.35%   | 953s    |
-| 4.    | Madhu G.         | Summer HPC-CC 2022            | 63.86%   | 1191s   |
-| 5.    | Gavin S.         | Summer HPC-CC 2022            | 65.43%   | 1262s   |
-| 6.    | Johannes K.      | Summer HPC-CC 2022            | 65.71%   | 1389s   |
-| 7.    | Alessandro B.    | Summer HPC-CC 2022            | 62.71%   | 1659s   |
-| 8.    | Sola O.          | Summer HPC-CC 2022            | 64.87%   | 1704s   |
-| 9.    | Abigail W.       | Summer HPC-CC 2022            | 61.04%   | 2161s   |
-| 10.   | Moyi T.          | Summer HPC-CC 2022            | 62.33%   | 2164s   |
-
+| 1.    | Michael S.       | OLCF                          | 99.99%   | 9999s   |
 
 ## 6. <a name="resources"></a>Additional Resources
 

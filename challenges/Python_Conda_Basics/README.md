@@ -12,82 +12,46 @@ This hands-on challenge will introduce a user to installing Conda on Frontier, t
 
 ## Installing Miniconda
 
-Currently, Frontier does NOT have Anaconda/Conda modules. If your workflow better suits conda environments, you can install your own Miniconda on Frontier.  
-The install process is rather simple (with a few notable warnings, see Cautionary Notes further below):
+Currently, Frontier does NOT have Anaconda/Conda modules, so we'll have to install Conda ourselves.
+More specifically, we'll be installing Miniconda which is a more minimal version of Anaconda that will be quicker to install.
+Luckily, a script was created ahead of time to do this for you!
+All you need to do is run the `install_conda_frontier.sh` script like so:
 
 ```bash
-mkdir miniconda_frontier/
-cd miniconda_frontier/
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-chmod u+x Miniconda3-latest-Linux-x86_64.sh
-./Miniconda3-latest-Linux-x86_64.sh -u -p ~/miniconda_frontier
+$ ~/hands-on-with-Frontier-/misc_scripts/install_conda_frontier.sh
 ```
 
 >>  ---
-> The -p flag specifies the prefix path for where to install miniconda.  
-> The -u updates any current installations at the -p location (not necessary if you didn’t do a “mkdir")
+> NOTE: You will ever only need to run the installation script once!
 >>  ---
 
-### Cautionary Notes
-
-While running the installer, you will be prompted with something like this:
-
-`Do you wish the installer to initialize Miniconda3 by running conda init? [yes|no]`
-
-If “`yes`”, your .bashrc (or equivalent shell configuration file) will be updated with something like this:
-
-```bash
-    # >>> conda initialize >>>
-    # !! Contents within this block are managed by 'conda init’ !! .
-    .
-    .
-    .
-    .
-    #unset __conda_setup
-    # <<< conda initialize <<<
-```
-
->>  ---
-> By default, this will always initialize conda upon login, which clashes with other Python installations (e.g., if you use the anaconda modules on other OLCF systems).  
->>  ---
-
-It is MUCH SAFER to say “`no`” and to just export the `PATH` manually when on Frontier to avoid clashing:
-
-```bash
-export PATH="/path/to/your/miniconda/bin:$PATH"
-```
-
->>  ---
-> If your .bashrc already has a similar block of code (e.g., from other OLCF modules), then it will NOT modify your bashrc
->>  ---
-
-An additional recommendation is to set things to not activate your base environment by default (to help with the potential clashing):
-
-```bash
-# Only needs to be run once after exporting conda into your PATH
-conda config --set auto_activate_base false
-```
+Provided there are no errors (there shouldn't be), you will now have access to your own Miniconda installation!
 
 &nbsp;
 
 ## Inspecting and setting up the environment
 
-First, we will unload all the current modules that you may have previously loaded on Frontier and then immediately load the default modules.
-Assuming you cloned the repository in your home directory:
+First, we will unload all the current modules that you may have previously loaded on Frontier:
 
-```
-$ cd ~/hands-on-with-Frontier-/challenges/Python_Conda_Basics
-$ module purge
-$ module load DefApps
+```bash
+$ module reset
 ```
 
-Next, we need to load the python module and the gnu compiler module (most Python packages assume use of GCC)
+Next, we need to load the gnu compiler module (most Python packages assume use of GCC):
 
 ```bash
 $ module load PrgEnv-gnu
 ```
 
-Next, we will create a new environment using the `conda create` command:
+Next, let's activate your Frontier Miniconda installation:
+
+```bash
+$ source ~/miniconda-frontier-handson/bin/activate base
+```
+
+This puts you in the "`base`" conda environment (your base-level install that came with a few packages).
+Typical best practice is to not install new things into the `base` environment, but to create new environments instead. 
+So, next, we will create a new environment using the `conda create` command:
 
 ```bash
 $ conda create -p /ccs/proj/<YOUR_PROJECT_ID>/<YOUR_USER_ID>/conda_envs/frontier/py39-frontier python=3.9
@@ -124,7 +88,7 @@ Executing transaction: done
 Due to the specific nature of conda on Frontier, we will be using `source activate` and `source deactivate` instead of `conda activate` and `conda deactivate`.
 Let's activate our new environment:
 
-```
+```bash
 $ source activate /ccs/proj/<YOUR_PROJECT_ID>/<YOUR_USER_ID>/conda_envs/frontier/py39-frontier
 ```
 
@@ -137,7 +101,7 @@ $ conda env list
 # conda environments:
 #
                       *  /ccs/proj/<YOUR_PROJECT_ID>/<YOUR_USER_ID>/conda_envs/frontier/py39-frontier
-base                     /sw/frontier/python/3.9/anaconda-base
+base                     /ccs/home/<YOUR_USER_ID>/miniconda-frontier-handson
 ```
 
 &nbsp;
@@ -150,6 +114,7 @@ There are a few different approaches.
 One way to install packages into your conda environment is to build packages from source using [pip](https://pip.pypa.io/en/stable/).
 This approach is useful if a specific package or package version is not available in the conda repository, or if the pre-compiled binaries don't work on the HPC resources (which is common).
 However, building from source means you need to take care of some of the dependencies yourself, especially for optimization.
+In Frontier's case, this means we need to load the `openblas` module.
 Pip is available to use after installing Python into your conda environment, which we have already done.
 
 >>  ---
@@ -158,7 +123,8 @@ Pip is available to use after installing Python into your conda environment, whi
 
 To build a package from source, use `pip install --no-binary=<package_name> <package_name>`:
 
-```
+```bash
+$ module load openblas
 $ CC=gcc pip install --no-binary=numpy numpy
 ```
 
@@ -170,15 +136,16 @@ Congratulations, you have built NumPy from source in your conda environment!
 We did not link in any additional linear algebra packages, so this version of NumPy is not optimized.
 Let's install a more optimized version using a different method instead, but first we must uninstall the pip-installed NumPy:
 
-```
+```bash
 $ pip uninstall numpy
+$ module unload openblas
 ```
 
 The traditional, and more basic, approach to installing/uninstalling packages into a conda environment is to use the commands `conda install` and `conda remove`.
 Installing packages with this method checks the [Anaconda Distribution Repository](https://docs.anaconda.com/anaconda/packages/pkg-docs/) for pre-built binary packages to install.
 Let's do this to install NumPy:
 
-```
+```bash
 $ conda install numpy
 ```
 
@@ -205,8 +172,8 @@ Make sure you're in the correct directory and execute the example Python script:
 $ cd ~/hands-on-with-Frontier-/challenges/Python_Conda_Basics/
 $ python3 hello.py
 
-Hello from Python 3.9!
-You are using NumPy 1.20.3
+Hello from Python 3.9.18!
+You are using NumPy 1.26.0
 ```
 
 Congratulations, you have just created your own Python environment and ran on one of the fastest computers in the world!
@@ -236,7 +203,7 @@ Congratulations, you have just created your own Python environment and ran on on
     If for some reason you need to delete an environment, you can execute the following:
 
     ```bash
-        $ conda env remove -p /path/to/your/env
+    $ conda env remove -p /path/to/your/env
     ```
 
 * Exporting (sharing) an environment:

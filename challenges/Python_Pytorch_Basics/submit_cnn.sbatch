@@ -6,14 +6,20 @@
 #SBATCH -p batch
 #SBATCH -N 1
 
+unset SLURM_EXPORT_ENV
+
 date
 
-module purge
 module load PrgEnv-gnu
+module load amd-mixed/5.6.0
 module load craype-accel-amd-gfx90a
 
-source deactivate_envs.sh
+export MIOPEN_USER_DB_PATH="/tmp/my-miopen-cache"
+export MIOPEN_CUSTOM_CACHE_DIR=${MIOPEN_USER_DB_PATH}
+rm -rf ${MIOPEN_USER_DB_PATH}
+mkdir -p ${MIOPEN_USER_DB_PATH}
 
-source activate /ccs/home/${USER}/conda_envs/frontier/py39-frontier
+source ~/miniconda-frontier-handson/bin/activate base
+source activate ~/.conda/envs/torch-frontier
 
-srun -n1 -c21 --gpus=1 --gpu-bind=closest --threads-per-core=1 -m block:block  python3 cnn.py
+python3 -u cnn.py

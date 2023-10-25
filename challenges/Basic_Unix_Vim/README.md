@@ -3,6 +3,7 @@
 In order to accomplish tasks in any high-performance computing system, you need to know
 how to navigate through and issue commands in a UNIX or Linux operating system. Unix-based systems operate through the command-line rather than a graphical user interface (GUI).  In this challenge, you will learn how to see files, make directories, navigate directories, and manipulate files all without a GUI. 
 
+
 &nbsp;
 
 ## The Command Line
@@ -28,6 +29,14 @@ userid
 ## Work With Directories
 
 You will need to learn to navigate the filesystem in order to find and access your files. The filesystem is a collection of files and directories. 'Directory' is just the UNIX term for 'folders' on Windows.
+
+To put us all in the same starting place, we will issue the `cd` command. This will take us to our home directory. 
+
+Type
+```
+[userid@login1.frontier ~]$ cd
+```
+Then hit `return`.
 
 The commands in a command line are always executed from the directory you are currently in. You can find out what directory you are currently in with the 'present working directory' command, `pwd`.
 ```bash
@@ -75,7 +84,7 @@ hands-on-with-Frontier-
 
 From here, lets try using `cd` to get to the `Basic_Unix_Vim` challenge directory in the `hands-on-with-Frontier-` repository.
 ```bash
-[userid@login1.frontier ~]$ cd hands-on-with-Frontier-/challenges/Basic_Unix_Vim
+[userid@login1.frontier ~]$ cd ~/hands-on-with-Frontier-/challenges/Basic_Unix_Vim
 ```
 
 This is the path _relative to your current directory_ (which would be `/ccs/home/<userid>`). You can also use the _absolute path_ with `cd` i.e. the path string starting with `/` is called a absolute path. This will take you to the same directory.
@@ -160,13 +169,13 @@ INSERT MODE --` indicator disappear as you can see in the image below.
 
 ![screenshot showing normal mode](images/screenshot_showing_normal_mode.png)
 
-Once in Normal Mode, you can save by typing on your keyboard `:w`. These characters won't
+Once in Normal Mode, you can save by typing on your keyboard `:w` followed by `return`. These characters won't
 appear in the main text but will appear in the bottom left. `:w` is the command for Vim to
 'write' the file to disk, thus saving the file. 
 
 ![screenshot showing :w](images/screenshot_showing_w.png)
 
-You can exit out of Vim and go back to the command line by typing in `:q`. If you haven't
+You can exit out of Vim and go back to the command line by typing in `:q` followed by `return`. If you haven't
 saved, you will get a warning and Vim won't exit, so make sure you save the file with `:w`
 first. 
 
